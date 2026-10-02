@@ -1,0 +1,64 @@
+# SAATHI-AI Git Attributes
+# Ensures consistent line endings across Windows and Linux (Docker/CI)
+# Prevents line ending modifications on binary model checkpoints, weights, and audio.
+
+# Default rule: Auto normalize line endings to LF
+* text=auto eol=lf
+
+# Explicit source code & configuration text files (LF)
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.env.example text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.proto text eol=lf
+Makefile text eol=lf
+Dockerfile* text eol=lf
+
+# Windows command / script files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Audio files (Binary - do not touch)
+*.wav binary
+*.mp3 binary
+*.ogg binary
+*.flac binary
+*.m4a binary
+*.aac binary
+
+# Model weights & Checkpoints (Binary - do not touch)
+*.pt binary
+*.pth binary
+*.bin binary
+*.onnx binary
+*.safetensors binary
+*.ckpt binary
+*.h5 binary
+*.tflite binary
+*.pkl binary
+*.joblib binary
+
+# Images & Documents (Binary)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
