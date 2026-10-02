@@ -9,6 +9,12 @@ from .assessment import (
     QualityFactors,
     SVIResult,
 )
+from .audio import (
+    AudioQualityResult,
+    SpeechSegment,
+    TranscriptSegment,
+    TranscriptResponse,
+)
 
 __all__ = [
     "BaseSchema",
@@ -30,4 +36,8 @@ __all__ = [
     "ModalityContributions",
     "SVIResult",
     "MasterAssessmentObject",
+    "AudioQualityResult",
+    "SpeechSegment",
+    "TranscriptSegment",
+    "TranscriptResponse",
 ]

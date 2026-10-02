@@ -1,0 +1,18 @@
+{
+  "name": "saathi-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SAATHI-AI — Multimodal Stress & Trauma Assessment System (SIH 2026)",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "uvicorn services.api.main:app --reload --port 8000",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web start",
+    "lint": "ruff check .",
+    "test": "pytest tests/"
+  }
+}

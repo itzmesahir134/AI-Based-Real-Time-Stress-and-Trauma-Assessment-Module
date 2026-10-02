@@ -5,7 +5,13 @@ from fastapi.responses import JSONResponse
 from packages.config import get_settings
 from packages.utils import get_logger, setup_logging
 from services.api.db import init_db
-from services.api.routers import cases_router, consent_router, health_router, sessions_router
+from services.api.routers import (
+    audio_router,
+    cases_router,
+    consent_router,
+    health_router,
+    sessions_router,
+)
 
 settings = get_settings()
 logger = get_logger("saathi.api")
@@ -57,6 +63,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router)
     app.include_router(consent_router)
     app.include_router(cases_router)
+    app.include_router(audio_router)
 
     return app
 
