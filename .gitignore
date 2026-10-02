@@ -43,6 +43,7 @@ venv.bak/
 .next/
 out/
 .turbo/
+*.tsbuildinfo
 
 # Testing & Coverage
 .coverage
