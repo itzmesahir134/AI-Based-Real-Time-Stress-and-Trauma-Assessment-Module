@@ -1,0 +1,119 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Next.js / React
+.next/
+out/
+.turbo/
+
+# Testing & Coverage
+.coverage
+.coverage.*
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
+.tox/
+
+# Audio / Media artifacts (Sensitive or bulky)
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.m4a
+*.aac
+!tests/fixtures/*.wav
+
+# ML Models & Checkpoints
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+*.h5
+*.tflite
+models/**/weights/*
+!models/**/weights/.gitkeep
+
+# Datasets (Never commit raw audio / personal information)
+datasets/raw/*
+!datasets/raw/.gitkeep
+datasets/processed/*
+!datasets/processed/.gitkeep
+
+# Environment variables & credentials
+.env
+.env*.local
+.env.production
+.env.staging
+*.pem
+*.key
+*.cert
+
+# Databases & local caches
+*.sqlite3
+*.db
+dump.rdb
+data/
+minio-data/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
