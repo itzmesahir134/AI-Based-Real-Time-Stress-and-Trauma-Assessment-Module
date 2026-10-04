@@ -118,3 +118,7 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 Desktop.ini
+.superpowers/
+test_audio/incoming/
+test_audio/pipeline_io/**/input/
+test_audio/pipeline_io/**/output/
