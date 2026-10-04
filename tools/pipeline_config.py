@@ -27,6 +27,12 @@ _TEST_AUDIO = _PROJECT_ROOT / "test_audio"
 _PIPELINE_IO = _TEST_AUDIO / "pipeline_io"
 _INCOMING = _TEST_AUDIO / "incoming"
 
+# Grouped shared input directories for minimal storage usage
+# M04 (Quality) and M06 (Preprocessor) share raw input
+SHARED_RAW_DIR = _PIPELINE_IO / "shared_raw"
+# M05 (VAD) and M07 (ASR) share preprocessed 16kHz mono audio
+SHARED_16K_DIR = _PIPELINE_IO / "shared_16k"
+
 
 # ── Module I/O descriptor ─────────────────────────────────────────
 
@@ -148,6 +154,8 @@ class PipelineConfig:
 
     def ensure_all_dirs(self) -> None:
         """Create all input/output directories that don't yet exist."""
+        SHARED_RAW_DIR.mkdir(parents=True, exist_ok=True)
+        SHARED_16K_DIR.mkdir(parents=True, exist_ok=True)
         for m in self._modules.values():
             m.ensure_dirs()
         _INCOMING.mkdir(parents=True, exist_ok=True)
@@ -161,14 +169,16 @@ class PipelineConfig:
         callable_path: str,
         filename_pattern: str,
         output_format: str,
+        input_dir: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
         depends_on: Optional[List[str]] = None,
     ) -> None:
         base = _PIPELINE_IO / module_id
         self._modules[module_id] = ModuleIO(
             module_id=module_id,
             module_callable=callable_path,
-            input_dir=base / "input",
-            output_dir=base / "output",
+            input_dir=input_dir if input_dir is not None else base / "input",
+            output_dir=output_dir if output_dir is not None else base / "output",
             output_format=output_format,
             filename_pattern=filename_pattern,
             depends_on=depends_on or [],
@@ -193,23 +203,33 @@ class PipelineConfig:
         )
 
     def _register_modules(self) -> None:
+        # Grouped layout:
+        # M04 (Quality) and M06 (Preprocessor) share SHARED_RAW_DIR
+        # M05 (VAD) and M07 (ASR) share SHARED_16K_DIR
+        # M06 preprocessor writes directly to SHARED_16K_DIR
         self._reg_module(
             "m04_quality_check",
             "services.audio_worker.quality.analyze_audio_quality",
             "{stem}_quality.json",
             "AudioQualityResult (JSON)",
+            input_dir=SHARED_RAW_DIR,
+            output_dir=_PIPELINE_IO / "m04_quality_check" / "output",
         )
         self._reg_module(
             "m06_preprocessor",
             "services.audio_worker.preprocessor.preprocess_audio",
             "{stem}_16k_mono.wav",
             "WAV 16kHz mono float32",
+            input_dir=SHARED_RAW_DIR,
+            output_dir=SHARED_16K_DIR,
         )
         self._reg_module(
             "m05_vad",
             "services.audio_worker.vad.detect_voice_activity",
             "{stem}_vad.json",
             "List[SpeechSegment] (JSON)",
+            input_dir=SHARED_16K_DIR,
+            output_dir=_PIPELINE_IO / "m05_vad" / "output",
             depends_on=["m06_preprocessor"],
         )
         self._reg_module(
@@ -217,6 +237,8 @@ class PipelineConfig:
             "services.audio_worker.asr.Transcriber.transcribe",
             "{stem}_transcript.json",
             "TranscriptResponse (JSON)",
+            input_dir=SHARED_16K_DIR,
+            output_dir=_PIPELINE_IO / "m07_asr" / "output",
             depends_on=["m06_preprocessor"],
         )
 
@@ -239,10 +261,11 @@ class PipelineConfig:
 
         # ── Download needed (no account required) ─────────────────
         self._reg_source(
-            "ds06_911_recordings", "DOWNLOAD_NEEDED",
+            "ds06_911_recordings", "AVAILABLE",
             "test_audio/incoming/external/911_calls",
             "Real US 911 emergency calls, first 6 seconds, CC0 Public Domain (~700 WAV files)",
             used_by=["m04_quality_check", "m05_vad", "m06_preprocessor", "m07_asr"],
+            count_approx=707,
             license="CC0 Public Domain",
             download_cmd="kaggle datasets download -d louisteitelbaum/911-recordings-first-6-seconds",
             notes="Unzip into destination folder. WAV format, variable sample rate.",
@@ -301,13 +324,14 @@ class PipelineConfig:
             notes="Best distress-adjacent labeled dataset. Academic email required.",
         )
         self._reg_source(
-            "ds09_vaani", "REGISTRATION_NEEDED",
+            "ds09_vaani", "AVAILABLE",
             "test_audio/incoming/external/vaani",
             "31,000+ hours Indian conversational speech across 100+ languages (IISc/ARTPARK)",
             used_by=["m04_quality_check", "m06_preprocessor", "m07_asr"],
+            count_approx=50,
             license="Project Vaani Research License",
             registration_url="https://huggingface.co/ARTPARK-IISc",
-            notes="Gated HuggingFace dataset. WAV, variable sample rate.",
+            notes="WAV, 16kHz mono. Real conversational Indian dialect speech.",
         )
 
 

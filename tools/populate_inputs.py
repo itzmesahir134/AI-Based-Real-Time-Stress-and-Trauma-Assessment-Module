@@ -1,76 +1,93 @@
 """
-populate_inputs.py — Populate module input folders from data sources
-====================================================================
+populate_inputs.py — Populate grouped pipeline input folders with zero duplication
+===================================================================================
 
-This script copies/symlinks audio files from each data source into
-the correct pipeline_io/mXX/input/ folder for each module.
+This script links audio files from each data source into the shared pipeline folders:
+- `test_audio/pipeline_io/shared_raw/`: Grouped input for M04 (Quality) and M06 (Preprocessor)
+- `test_audio/pipeline_io/shared_16k/`: Grouped input for M05 (VAD) and M07 (ASR)
 
-Run this ONCE after downloading new datasets, or when adding new
-audio files to the test set.
+Uses NTFS hardlinks by default (os.link) so audio files take 0 MB of extra disk space.
+Falls back to copy only if cross-device linking is not supported.
 
 Usage:
     python tools/populate_inputs.py
-    python tools/populate_inputs.py --module m04_quality_check
     python tools/populate_inputs.py --dry-run
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
 
 # Allow running from project root
-_PROJECT_ROOT = Path(__file__).parent.parent
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from tools.pipeline_config import get_config, PIPELINE_EXECUTION_ORDER
+from tools.pipeline_config import (
+    SHARED_RAW_DIR,
+    SHARED_16K_DIR,
+    get_config,
+)
 
-# ── Source → Module input mapping ─────────────────────────────────
-# Defines which source folders populate which module input folders.
-# A source folder may feed multiple modules.
+# ── Source → Grouped Target Mapping ──────────────────────────────
+# raw: files needing raw quality check / resampling (feeds shared_raw)
+# 16k: files that are already 16kHz and directly usable by VAD/ASR (feeds shared_16k)
+SOURCE_TARGET_MAP: dict[str, list[str]] = {
+    # Curated (16kHz mono) -> both raw (for quality testing) and 16k (direct VAD/ASR)
+    "curated_clean":            ["raw", "16k"],
+    "curated_emotional":        ["raw", "16k"],
+    "curated_conversational":   ["raw", "16k"],
+    "curated_edge_cases":       ["raw", "16k"],
+    "curated_indian_languages": ["raw", "16k"],
+    "augmented_variants":       ["raw"],
 
-SOURCE_TO_MODULE_INPUTS: dict[str, list[str]] = {
-    # ---- Existing curated data (already 16kHz) ----
-    # Goes directly into M04 and M07 (no resampling needed)
-    "curated_clean":           ["m04_quality_check", "m05_vad", "m07_asr"],
-    "curated_emotional":       ["m04_quality_check", "m05_vad", "m07_asr"],
-    "curated_conversational":  ["m04_quality_check", "m05_vad", "m07_asr"],
-    "curated_edge_cases":      ["m04_quality_check", "m05_vad"],
-    "curated_indian_languages":["m04_quality_check", "m07_asr"],
-    # Augmented variants test M04 (quality under degradation) and M06 (resampler robustness)
-    "augmented_variants":      ["m04_quality_check", "m06_preprocessor"],
-
-    # ---- External datasets (8kHz or 44.1kHz → need M06 resampling) ----
-    # These go into M04 (raw quality assessment) and M06 (for resampling)
-    # M05/M07 gets their output via M06 → output is then copied to m05/m07 input
-    "ds06_911_recordings":     ["m04_quality_check", "m06_preprocessor"],
-    "ds04_axondata":           ["m04_quality_check", "m06_preprocessor"],
-    "ds11_shemo":              ["m04_quality_check", "m06_preprocessor"],
-    "ds05_hindi_calls":        ["m04_quality_check", "m06_preprocessor"],
-    "ds02_callhome":           ["m04_quality_check", "m06_preprocessor"],
-    "ds08_daic_woz":           ["m04_quality_check", "m05_vad", "m07_asr"],
-    "ds09_vaani":              ["m04_quality_check", "m06_preprocessor"],
+    # External datasets
+    "ds06_911_recordings":      ["raw"],
+    "ds04_axondata":            ["raw"],
+    "ds11_shemo":               ["raw"],
+    "ds05_hindi_calls":         ["raw"],
+    "ds02_callhome":            ["raw"],
+    "ds08_daic_woz":            ["raw", "16k"],
+    "ds09_vaani":               ["raw", "16k"],  # Vaani is already 16kHz mono
 }
 
 
-def populate(module_filter: str | None, dry_run: bool) -> None:
+def link_or_copy(src: Path, dest: Path) -> str:
+    """Link file using NTFS hardlink (0 extra bytes) or copy if hardlink unsupported."""
+    if dest.exists():
+        return "EXISTS"
+    try:
+        os.link(src, dest)
+        return "LINKED"
+    except (OSError, NotImplementedError):
+        shutil.copy2(src, dest)
+        return "COPIED"
+
+
+def populate(dry_run: bool) -> None:
     cfg = get_config()
     cfg.ensure_all_dirs()
 
-    total_copied = 0
+    print("\n=== SAATHI-AI Minimal-Storage Input Populator ===\n")
+    print(f"  Target Shared Raw : {SHARED_RAW_DIR}")
+    print(f"  Target Shared 16k : {SHARED_16K_DIR}\n")
 
-    for source_id, target_modules in SOURCE_TO_MODULE_INPUTS.items():
+    total_added = 0
+    total_skipped = 0
+
+    for source_id, targets in SOURCE_TARGET_MAP.items():
         try:
             src = cfg.source(source_id)
         except KeyError:
-            print(f"  [WARN] Unknown source '{source_id}' — skipping")
+            print(f"  [WARN] Unknown source '{source_id}' - skipping")
             continue
 
         if not src.is_available:
             status_detail = (
-                f"download: {src.download_cmd[:60]}..."
+                f"download: {src.download_cmd[:50]}..."
                 if src.needs_download
                 else f"register at: {src.registration_url}"
             )
@@ -82,38 +99,39 @@ def populate(module_filter: str | None, dry_run: bool) -> None:
             print(f"  [WARN] {source_id} - 0 WAV files found in {src.location}")
             continue
 
-        for module_id in target_modules:
-            if module_filter and module_id != module_filter:
-                continue
-            try:
-                mod = cfg.module(module_id)
-            except KeyError:
-                continue
+        dest_dirs = []
+        if "raw" in targets:
+            dest_dirs.append(SHARED_RAW_DIR)
+        if "16k" in targets:
+            dest_dirs.append(SHARED_16K_DIR)
 
-            print(f"  [{source_id}] -> [{module_id}] ({len(wav_files)} files)")
+        print(f"  [{source_id}] -> {', '.join(targets)} ({len(wav_files)} files)")
 
-            for wav in wav_files:
-                dest = mod.input_dir / wav.name
+        for wav in wav_files:
+            for dest_dir in dest_dirs:
+                dest = dest_dir / wav.name
                 if dest.exists():
-                    continue  # already present, skip
+                    total_skipped += 1
+                    continue
                 if not dry_run:
-                    shutil.copy2(wav, dest)
-                    total_copied += 1
+                    action = link_or_copy(wav, dest)
+                    if action in ("LINKED", "COPIED"):
+                        total_added += 1
                 else:
-                    print(f"    DRY: {wav.name} -> {dest}")
-                    total_copied += 1
+                    total_added += 1
 
-    print(f"\n[OK] {'Would copy' if dry_run else 'Copied'} {total_copied} files total.")
+    action_label = "Would add" if dry_run else "Added"
+    print(f"\n[OK] {action_label} {total_added} entries ({total_skipped} already present).")
+    print(f"  Files in {SHARED_RAW_DIR.name}: {len(list(SHARED_RAW_DIR.glob('*.wav')))}")
+    print(f"  Files in {SHARED_16K_DIR.name}: {len(list(SHARED_16K_DIR.glob('*.wav')))}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Populate module input folders from data sources")
-    parser.add_argument("--module", help="Only populate a specific module (e.g. m04_quality_check)")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be copied without doing it")
+    parser = argparse.ArgumentParser(description="Populate shared grouped pipeline input folders")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be added without making changes")
     args = parser.parse_args()
 
-    print("\n=== SAATHI-AI Pipeline Input Populator ===\n")
-    populate(args.module, args.dry_run)
+    populate(dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

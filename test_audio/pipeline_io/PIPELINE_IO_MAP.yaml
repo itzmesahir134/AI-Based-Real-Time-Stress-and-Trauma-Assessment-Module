@@ -22,24 +22,18 @@ modules:
 
   # ----------------------------------------------------------------
   # M04 — Audio Quality Analyzer
-  # Input:  raw WAV files (any sample rate, any channel count)
+  # Input:  raw WAV files (grouped with M06 under shared_raw/)
   # Output: AudioQualityResult JSON per file
   # ----------------------------------------------------------------
   m04_quality_check:
     module: "services.audio_worker.quality.analyze_audio_quality"
     input:
-      folder: "test_audio/pipeline_io/m04_quality_check/input"
+      folder: "test_audio/pipeline_io/shared_raw"
       accepts: ["*.wav"]
       description: >
-        Raw audio files before any processing.
+        Grouped raw audio pool (shared with M06).
         May be 8kHz or 16kHz, mono or stereo, any recording quality.
-        Source pools:
-          - test_audio/curated/clean/
-          - test_audio/curated/emotional/
-          - test_audio/curated/conversational/
-          - test_audio/curated/edge_cases/
-          - test_audio/curated/indian_languages/
-          - test_audio/incoming/external/  (downloaded datasets)
+        Uses NTFS hardlinks to zero-out duplicate disk usage.
     output:
       folder: "test_audio/pipeline_io/m04_quality_check/output"
       format: "AudioQualityResult (JSON)"
@@ -54,19 +48,39 @@ modules:
       - EMPTY_AUDIO
 
   # ----------------------------------------------------------------
+  # M06 — Audio Preprocessor
+  # Input:  raw WAV files (grouped with M04 under shared_raw/)
+  # Output: normalized 16kHz mono WAV files (written to shared_16k/)
+  # ----------------------------------------------------------------
+  m06_preprocessor:
+    module: "services.audio_worker.preprocessor.preprocess_audio"
+    input:
+      folder: "test_audio/pipeline_io/shared_raw"
+      accepts: ["*.wav"]
+      description: >
+        Grouped raw audio pool (shared with M04).
+        Resampling to 16kHz and mono-downmix is applied here.
+    output:
+      folder: "test_audio/pipeline_io/shared_16k"
+      format: "WAV, 16kHz, 16-bit, mono, float32 normalized"
+      filename_pattern: "{stem}_16k_mono.wav"
+    notes: >
+      Output of M06 is written directly to shared_16k/, making it
+      immediately accessible to M05 and M07 without duplicate copies.
+
+  # ----------------------------------------------------------------
   # M05 — Voice Activity Detector
-  # Input:  preprocessed 16kHz mono float32 WAV
+  # Input:  preprocessed 16kHz mono WAV (grouped with M07 under shared_16k/)
   # Output: List[SpeechSegment] JSON per file
   # ----------------------------------------------------------------
   m05_vad:
     module: "services.audio_worker.vad.detect_voice_activity"
     input:
-      folder: "test_audio/pipeline_io/m05_vad/input"
+      folder: "test_audio/pipeline_io/shared_16k"
       accepts: ["*.wav"]
       description: >
-        Audio that has passed M06 preprocessing (16kHz, mono, normalized).
-        Populated by m06_preprocessor output or directly from curated
-        samples that are already 16kHz mono.
+        Grouped 16kHz mono audio pool (shared with M07).
+        Contains M06 preprocessed audio and curated 16kHz samples.
     output:
       folder: "test_audio/pipeline_io/m05_vad/output"
       format: "List[SpeechSegment] (JSON)"
@@ -75,46 +89,18 @@ modules:
     depends_on: ["m06_preprocessor"]
 
   # ----------------------------------------------------------------
-  # M06 — Audio Preprocessor
-  # Input:  raw WAV files (any sample rate / channels)
-  # Output: normalized 16kHz mono WAV files
-  # ----------------------------------------------------------------
-  m06_preprocessor:
-    module: "services.audio_worker.preprocessor.preprocess_audio"
-    input:
-      folder: "test_audio/pipeline_io/m06_preprocessor/input"
-      accepts: ["*.wav"]
-      description: >
-        Raw audio in any sample rate (8kHz telephone, 44.1kHz studio, etc.)
-        Resampling to 16kHz and mono-downmix is applied here.
-        Source pools:
-          - test_audio/curated/ (already 16kHz — pass-through test)
-          - test_audio/incoming/external/axondata/   (8kHz call center)
-          - test_audio/incoming/external/callhome/   (8kHz telephone)
-          - test_audio/incoming/external/hindi_calls/ (8kHz telephone)
-          - test_audio/incoming/external/shemo/       (44.1kHz persian)
-    output:
-      folder: "test_audio/pipeline_io/m06_preprocessor/output"
-      format: "WAV, 16kHz, 16-bit, mono, float32 normalized"
-      filename_pattern: "{stem}_16k_mono.wav"
-    notes: >
-      Output of M06 is the canonical input for M05 (VAD) and M07 (ASR).
-      Files here should be written to m05_vad/input and m07_asr/input
-      by the pipeline runner after M06 completes.
-
-  # ----------------------------------------------------------------
   # M07 — Speech-to-Text (ASR)
-  # Input:  preprocessed 16kHz mono WAV
+  # Input:  preprocessed 16kHz mono WAV (grouped with M05 under shared_16k/)
   # Output: TranscriptResponse JSON per file
   # ----------------------------------------------------------------
   m07_asr:
     module: "services.audio_worker.asr.Transcriber.transcribe"
     input:
-      folder: "test_audio/pipeline_io/m07_asr/input"
+      folder: "test_audio/pipeline_io/shared_16k"
       accepts: ["*.wav"]
       description: >
-        16kHz mono normalized WAV files (output of M06 preprocessor).
-        Language hint passed per-file via sidecar metadata JSON.
+        Grouped 16kHz mono audio pool (shared with M05).
+        Language hint passed per-file via filename heuristics/metadata.
     output:
       folder: "test_audio/pipeline_io/m07_asr/output"
       format: "TranscriptResponse (JSON)"
@@ -179,28 +165,26 @@ data_sources:
   # --- EXTERNAL / TO BE DOWNLOADED ---
 
   ds06_911_recordings:
-    status: DOWNLOAD_NEEDED
+    status: AVAILABLE
     license: "CC0 Public Domain"
     download_cmd: "kaggle datasets download -d louisteitelbaum/911-recordings-first-6-seconds"
     destination: "test_audio/incoming/external/911_calls/"
     format: "WAV"
-    sample_rate: "variable (8–16kHz estimated)"
-    count_approx: 700
+    sample_rate: "variable (8-16kHz estimated)"
+    count_approx: 707
     description: "Real US 911 emergency calls, first 6 seconds, CC0"
-    used_by: [m04_quality_check, m05_vad, m06_preprocessor, m07_asr]
+    used_by: [m04_quality_check, m06_preprocessor]
 
   ds04_axondata:
-    status: DOWNLOAD_NEEDED
+    status: AVAILABLE
     license: "CC BY-NC 4.0"
-    download_cmd: |
-      from datasets import load_dataset
-      ds = load_dataset("AxonData/english-contact-center-audio-dataset", streaming=True)
     destination: "test_audio/incoming/external/axondata/"
     format: "WAV, mono, 8kHz"
     sample_rate: 8000
+    count_approx: 50
     description: "Real English call center recordings, 1000+ hours (stream subset)"
     used_by: [m04_quality_check, m06_preprocessor]
-    notes: "Stream and extract 50–100 files for pipeline testing only"
+    notes: "Stream and extract 50 files for pipeline testing"
 
   ds11_shemo:
     status: DOWNLOAD_NEEDED
@@ -211,43 +195,47 @@ data_sources:
     sample_rate: 44100
     description: "Persian semi-naturalistic emotional speech, 3000 utterances, fear/sadness/anger labels"
     used_by: [m04_quality_check, m06_preprocessor, m05_vad, m07_asr]
-    notes: "44.1kHz → resampled to 16kHz by M06. Tests cross-lingual pipeline behavior."
+    notes: "44.1kHz -> resampled to 16kHz by M06. Tests cross-lingual pipeline behavior."
 
   ds05_hindi_760h_sample:
-    status: DOWNLOAD_NEEDED
-    license: "CC BY-NC-ND 4.0 (Kaggle sample)"
-    download_cmd: "kaggle datasets download -d simaongraves/760h-hindi-phone-calls-dataset"
+    status: AVAILABLE
+    license: "CC BY-NC-ND 4.0"
     destination: "test_audio/incoming/external/hindi_calls/"
     format: "WAV, 8kHz"
     sample_rate: 8000
+    count_approx: 23
     description: "Real Hindi telephone dialogues, 1000+ native speakers. 8kHz phone quality."
-    used_by: [m04_quality_check, m06_preprocessor, m07_asr]
+    used_by: [m04_quality_check, m06_preprocessor]
 
   ds02_callhome:
-    status: REGISTRATION_NEEDED
-    license: "TalkBank License (free research, requires account)"
+    status: AVAILABLE
+    license: "TalkBank License (free research)"
     registration_url: "https://talkbank.org"
     destination: "test_audio/incoming/external/callhome/"
-    format: "WAV/MP4, 8kHz, mono"
+    format: "WAV, 8kHz, mono"
     sample_rate: 8000
+    count_approx: 10
     description: "Real naturalistic telephone conversations, family/friends, multilingual"
-    used_by: [m04_quality_check, m06_preprocessor, m05_vad, m07_asr]
+    used_by: [m04_quality_check, m06_preprocessor]
 
   ds08_daic_woz:
     status: REGISTRATION_NEEDED
     license: "USC ICT Academic Research License"
     registration_url: "https://dcapswoz.ict.usc.edu/"
     destination: "test_audio/incoming/external/daic_woz/"
-    format: "WAV"
-    description: "Clinical distress interviews, 189 sessions, PHQ-8 scores"
+    format: "WAV, 16kHz mono"
+    sample_rate: 16000
+    description: "Clinical distress interviews, 189 sessions, PHQ-8 depression/distress scores"
     used_by: [m04_quality_check, m05_vad, m07_asr]
-    notes: "Best distress-adjacent labeled dataset. Academic email required."
 
   ds09_vaani:
-    status: REGISTRATION_NEEDED
-    license: "Project Vaani Research License (HuggingFace gated)"
+    status: AVAILABLE
+    license: "Project Vaani Research License"
     registration_url: "https://huggingface.co/ARTPARK-IISc"
     destination: "test_audio/incoming/external/vaani/"
-    format: "WAV, variable sample rate"
-    description: "31,000+ hours Indian conversational speech, 100+ languages"
-    used_by: [m04_quality_check, m06_preprocessor, m07_asr]
+    format: "WAV, 16kHz mono"
+    sample_rate: 16000
+    count_approx: 50
+    description: "31,000+ hours Indian conversational speech across 100+ languages (IISc/ARTPARK)"
+    used_by: [m04_quality_check, m05_vad, m07_asr]
+
