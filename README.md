@@ -65,11 +65,39 @@ saathi-ai/
 
 ---
 
-## Getting Started
+## Quick Start & Live Demo
 
-1. **Copy Environment Template:**
-   ```bash
-   cp .env.example .env
-   ```
-2. **Review Implementation Spec:**
-   Read [SAATHI_AI_IMPLEMENTATION_SPEC.md](file:///c:/Projects/SaathiAI/SAATHI_AI_IMPLEMENTATION_SPEC.md) for detailed architectural rules, module contracts, and safety constraints.
+### One-Click Demo Launch (Windows PowerShell)
+```powershell
+./scripts/run_demo.ps1
+```
+This single command:
+1. Trains ML model checkpoints and exports them to `models/`.
+2. Seeds the database with 17 realistic emergency & helpline triage cases across all risk bands.
+3. Launches the FastAPI backend (`http://localhost:8000`).
+4. Launches the Next.js frontend (`http://localhost:3000/login`) and opens your browser.
+
+### Demo Credentials (Role-Based Access Control)
+| Role | Username | Password | Access Level |
+|---|---|---|---|
+| **Responder** | `responder` | `saathi-resp-2026` | Live Triage Queue, Case Details, Human Review Form |
+| **Admin** | `admin` | `saathi-admin-2026` | Full Access + Model Registry + System Audit Log |
+| **Auditor** | `auditor` | `saathi-audit-2026` | Read-only Cases & Immutable Audit Log Trail |
+
+---
+
+## Running Tests
+
+```bash
+# Run all 81 unit, integration, and E2E scenario tests
+pytest tests/ -q
+```
+
+---
+
+## Documentation & Presentation Assets
+- **Pitch Deck & Demo Script:** [`docs/SIH_PITCH_DECK.md`](file:///c:/Projects/SaathiAI/docs/SIH_PITCH_DECK.md)
+- **Judges' Q&A Defense Guide:** [`docs/JUDGES_QA_DEFENSE_GUIDE.md`](file:///c:/Projects/SaathiAI/docs/JUDGES_QA_DEFENSE_GUIDE.md)
+- **Model Performance & Ethical Cards:** [`docs/model-cards/`](file:///c:/Projects/SaathiAI/docs/model-cards/)
+- **Full Architectural Specification:** [`SAATHI_AI_IMPLEMENTATION_SPEC.md`](file:///c:/Projects/SaathiAI/SAATHI_AI_IMPLEMENTATION_SPEC.md)
+
