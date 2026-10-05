@@ -1,6 +1,6 @@
 export type RiskBand = "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
 
-export type AssessmentStatus = "IN_PROGRESS" | "COMPLETE" | "INSUFFICIENT_EVIDENCE";
+export type AssessmentStatus = "IN_PROGRESS" | "COMPLETE" | "PARTIAL" | "INSUFFICIENT_EVIDENCE";
 
 export type ChannelEnum = "VOICE_CALL" | "WEB_AUDIO" | "CHAT_TEXT" | "WHATSAPP" | "WALK_IN";
 
@@ -41,8 +41,26 @@ export interface CaseResponse {
   updated_at: string;
 }
 
+export interface HumanReviewCreate {
+  reviewer_id: string;
+  final_action: "CONFIRM" | "ESCALATE" | "DOWNGRADE" | "CLOSE";
+  modified_priority?: RiskBand;
+  reason?: string;
+}
+
+export interface HumanReviewResponse {
+  id: string;
+  case_id: string;
+  reviewer_id: string;
+  final_action: string;
+  modified_priority?: RiskBand;
+  reason?: string;
+  created_at: string;
+}
+
 export interface MasterAssessmentObject {
   session_id: string;
+  case_id?: string | null;
   assessment_status: AssessmentStatus;
   svi: number;
   risk_band: RiskBand;

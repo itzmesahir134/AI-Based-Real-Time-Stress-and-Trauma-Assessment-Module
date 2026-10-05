@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# System deps for audio processing and ML libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libsndfile1 curl build-essential && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md ./
+RUN pip install --no-cache-dir -e ".[ml]"
+
+COPY packages/ packages/
+COPY services/ services/
+
+CMD ["python", "-m", "services.audio_worker.worker"]

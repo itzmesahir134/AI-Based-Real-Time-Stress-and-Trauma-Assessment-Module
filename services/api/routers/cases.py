@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from packages.schemas import CaseCreate, CaseResponse, CaseStatus, RiskBand
 from services.api.db import CaseModel, SessionModel, get_db
 
-router = APIRouter(prefix="/api/v1/cases", tags=["Cases"])
+from services.api.security import require_role
+
+router = APIRouter(
+    prefix="/api/v1/cases",
+    tags=["Cases"],
+    dependencies=[Depends(require_role("RESPONDER", "SUPERVISOR", "ADMIN"))]
+)
 
 
 @router.post("", response_model=CaseResponse, status_code=status.HTTP_201_CREATED)

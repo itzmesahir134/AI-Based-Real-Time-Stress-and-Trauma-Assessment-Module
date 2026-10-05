@@ -61,3 +61,15 @@ class MasterAssessmentObject(BaseSchema):
     contributors: List[str] = Field(default_factory=list, description="Top factor descriptors for human explanation")
     missing_evidence: List[str] = Field(default_factory=list, description="Uncollected or abstained modalities")
     support_recommendations: List[str] = Field(default_factory=list, description="Recommended triage paths")
+    case_id: Optional[UUID] = Field(None, description="Associated case ID if opened")
+
+
+class AssessmentRunRequest(BaseSchema):
+    """Payload to trigger an end-to-end assessment."""
+    session_id: UUID
+    audio_base64: Optional[str] = Field(None, description="Base64 encoded audio file")
+    s3_key: Optional[str] = Field(None, description="MinIO object key for pre-uploaded audio")
+    language: str = Field(default="hi")
+    self_report: Optional[dict] = Field(None, description="SelfReportQuestionnaire payload")
+    context: Optional[dict] = Field(None, description="ContextData payload")
+

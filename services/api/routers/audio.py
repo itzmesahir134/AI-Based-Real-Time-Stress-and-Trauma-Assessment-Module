@@ -1,10 +1,12 @@
 from typing import Optional
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
-from packages.schemas import AudioQualityResult, TranscriptResponse
+from packages.schemas import AudioQualityResult, TranscriptResponse, VoiceFeatureVector
 from services.audio_worker import (
     Transcriber,
     analyze_audio_quality,
     bytes_to_pcm_array,
+    detect_voice_activity,
+    extract_voice_features,
     preprocess_audio,
 )
 
@@ -47,3 +49,23 @@ async def transcribe_speech(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to transcribe speech: {str(e)}",
         )
+
+
+@router.post("/features", response_model=VoiceFeatureVector, status_code=status.HTTP_200_OK)
+async def extract_audio_features(
+    file: UploadFile = File(..., description="Audio file payload (WAV or PCM binary)"),
+):
+    """Spec M08: Extracts acoustic and prosodic feature vector from audio."""
+    try:
+        content = await file.read()
+        audio, sample_rate = bytes_to_pcm_array(content)
+        cleaned_audio, sr = preprocess_audio(audio, orig_sr=sample_rate)
+        segments = detect_voice_activity(cleaned_audio, sample_rate=sr)
+        features = extract_voice_features(cleaned_audio, speech_segments=segments, sample_rate=sr)
+        return features
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to extract voice features: {str(e)}",
+        )
+

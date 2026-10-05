@@ -19,6 +19,12 @@ dependencies = [
     "livekit-agents>=0.8.0",
     "numpy>=1.26.4",
     "scipy>=1.13.0",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.0",
+    "python-dotenv>=1.0.0",
+    "PyJWT>=2.8.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -27,6 +33,8 @@ dev = [
     "ruff>=0.6.9",
     "mypy>=1.11.2",
     "datamodel-code-generator>=0.25.8",
+    "psycopg2-binary>=2.9.9",
+    "aiosqlite>=0.20.0",
 ]
 test = [
     "pytest>=8.2.0",
@@ -51,6 +59,10 @@ ml = [
 [build-system]
 requires = ["setuptools>=68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["services", "packages"]
+
 
 [tool.ruff]
 line-length = 100
@@ -105,6 +117,7 @@ warn_required_dynamic_aliases = true
 minversion = "8.0"
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

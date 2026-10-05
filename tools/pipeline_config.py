@@ -241,6 +241,53 @@ class PipelineConfig:
             output_dir=_PIPELINE_IO / "m07_asr" / "output",
             depends_on=["m06_preprocessor"],
         )
+        self._reg_module(
+            "m08_voice_features",
+            "services.audio_worker.features.extract_voice_features",
+            "{stem}_features.json",
+            "VoiceFeatureVector (JSON)",
+            input_dir=SHARED_16K_DIR,
+            output_dir=_PIPELINE_IO / "m08_voice_features" / "output",
+            depends_on=["m06_preprocessor", "m05_vad"],
+        )
+        self._reg_module(
+            "m09_voice_distress",
+            "services.inference.voice_model.evaluate_voice_distress",
+            "{stem}_voice_distress.json",
+            "VoiceInferenceResult (JSON)",
+            input_dir=_PIPELINE_IO / "m08_voice_features" / "output",
+            output_dir=_PIPELINE_IO / "m09_voice_distress" / "output",
+            depends_on=["m08_voice_features", "m04_quality_check"],
+        )
+        self._reg_module(
+            "m10_transcript_normalizer",
+            "services.inference.transcript_normalizer.normalize_transcript",
+            "{stem}_normalized.json",
+            "NormalizedTranscript (JSON)",
+            input_dir=_PIPELINE_IO / "m07_asr" / "output",
+            output_dir=_PIPELINE_IO / "m10_transcript_normalizer" / "output",
+            depends_on=["m07_asr"],
+        )
+        self._reg_module(
+            "m11_linguistic_features",
+            "services.inference.linguistic_features.extract_linguistic_features",
+            "{stem}_ling_features.json",
+            "LinguisticFeatures (JSON)",
+            input_dir=_PIPELINE_IO / "m10_transcript_normalizer" / "output",
+            output_dir=_PIPELINE_IO / "m11_linguistic_features" / "output",
+            depends_on=["m10_transcript_normalizer"],
+        )
+        self._reg_module(
+            "m12_text_distress",
+            "services.inference.text_classifier.classify_text_distress",
+            "{stem}_text_distress.json",
+            "TextInferenceResult (JSON)",
+            input_dir=_PIPELINE_IO / "m10_transcript_normalizer" / "output",
+            output_dir=_PIPELINE_IO / "m12_text_distress" / "output",
+            depends_on=["m10_transcript_normalizer", "m11_linguistic_features"],
+        )
+
+
 
     def _register_sources(self) -> None:
         # ── Available (already on disk) ───────────────────────────
@@ -339,10 +386,15 @@ class PipelineConfig:
 
 # Execution order: M04 → M06 → (M05 || M07)
 PIPELINE_EXECUTION_ORDER = [
-    "m04_quality_check",   # Run first: gate on quality
-    "m06_preprocessor",    # Normalize to 16kHz mono
-    "m05_vad",             # VAD on preprocessed audio
-    "m07_asr",             # ASR on preprocessed audio
+    "m04_quality_check",           # Run first: gate on quality
+    "m06_preprocessor",            # Normalize to 16kHz mono
+    "m05_vad",                     # VAD on preprocessed audio
+    "m07_asr",                     # ASR on preprocessed audio
+    "m08_voice_features",          # Prosodic & spectral feature extraction
+    "m09_voice_distress",          # Acoustic distress evaluation
+    "m10_transcript_normalizer",   # Clean ASR transcript
+    "m11_linguistic_features",     # Extract psychological distress terms
+    "m12_text_distress",           # Text distress classifier
 ]
 
 # Quality gate: skip M05/M07 if M04 score falls below this threshold

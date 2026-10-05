@@ -14,6 +14,7 @@ class AssessmentStatus(str, Enum):
     """Status of SVI assessment processing."""
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETE = "COMPLETE"
+    PARTIAL = "PARTIAL"
     INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
 
 

@@ -1,0 +1,457 @@
+<mxfile host="app.diagrams.net" modified="2026-10-05T00:00:00.000Z" agent="SaathiAI" version="24.7.17">
+  <diagram id="saathi-pipeline-arch" name="SaathiAI Pipeline Architecture">
+    <mxGraphModel dx="1800" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1200" background="#F8FAFC" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- =============================================================
+             LAYER HEADERS (background bands for visual grouping)
+             ============================================================= -->
+        <mxCell id="lane_entry" value="" style="swimlane;startSize=0;fillColor=#FFFDE7;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="220" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_entry_lbl" value="&lt;b style='font-size:13px;color:#F57F17'&gt;① Client Entry&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="25" width="220" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_preproc" value="" style="swimlane;startSize=0;fillColor=#E1F5FE;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="260" y="20" width="280" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_preproc_lbl" value="&lt;b style='font-size:13px;color:#01579B'&gt;② Audio Pre-Processing&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="25" width="280" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_feat" value="" style="swimlane;startSize=0;fillColor=#E8F5E9;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="560" y="20" width="280" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_feat_lbl" value="&lt;b style='font-size:13px;color:#1B5E20'&gt;③ Feature Extraction&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="25" width="280" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_infer" value="" style="swimlane;startSize=0;fillColor=#FFF3E0;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="860" y="20" width="290" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_infer_lbl" value="&lt;b style='font-size:13px;color:#E65100'&gt;④ ML Inference&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="25" width="290" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_safety" value="" style="swimlane;startSize=0;fillColor=#FFEBEE;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="20" width="270" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_safety_lbl" value="&lt;b style='font-size:13px;color:#B71C1C'&gt;⑤ Safety &amp; Crisis&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="25" width="270" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_fusion" value="" style="swimlane;startSize=0;fillColor=#F3E5F5;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="1460" y="20" width="260" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_fusion_lbl" value="&lt;b style='font-size:13px;color:#4A148C'&gt;⑥ Scoring &amp; Fusion&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="1460" y="25" width="260" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane_triage" value="" style="swimlane;startSize=0;fillColor=#E0F2F1;strokeColor=none;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="1740" y="20" width="620" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_triage_lbl" value="&lt;b style='font-size:13px;color:#004D40'&gt;⑦ Triage &amp; Output&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+          <mxGeometry x="1740" y="25" width="620" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- =============================================================
+             NODES
+             ============================================================= -->
+
+        <!-- ① Entry -->
+        <mxCell id="n_raw" value="&lt;b&gt;Incoming Payload&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;Raw Audio bytes + Metadata&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9E9E9E;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="35" y="100" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m01" value="&lt;b&gt;M01 — Consent Validator&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: Metadata | Out: ConsentResponse&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#FBC02D;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="35" y="250" width="200" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m02" value="&lt;b&gt;M02 — Session Manager&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: ConsentResponse | Out: SessionResponse + Raw WAV&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#FBC02D;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="35" y="420" width="200" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ② Pre-Processing -->
+        <mxCell id="n_m04" value="&lt;b&gt;M04 — Audio Quality&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: Raw WAV&lt;br&gt;Out: AudioQualityResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0288D1;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="100" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m06" value="&lt;b&gt;M06 — Audio Preprocessor&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: Raw WAV&lt;br&gt;Out: 16kHz mono float32 WAV&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0288D1;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="260" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m03" value="&lt;b&gt;M03 — Language Identifier&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: 16kHz WAV&lt;br&gt;Out: Language Code (str)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0288D1;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="430" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m05" value="&lt;b&gt;M05 — VAD&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: 16kHz WAV&lt;br&gt;Out: List[SpeechSegment]&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0288D1;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="600" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m07" value="&lt;b&gt;M07 — ASR (Whisper)&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: 16kHz WAV + Language Code&lt;br&gt;Out: TranscriptResponse (embeds AudioQualityResult)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0288D1;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="780" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ③ Feature Extraction -->
+        <mxCell id="n_m08" value="&lt;b&gt;M08 — Voice Feature Extractor&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: 16kHz WAV + List[SpeechSegment]&lt;br&gt;Out: VoiceFeatureVector&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="500" width="230" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m10" value="&lt;b&gt;M10 — Transcript Normalizer&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: TranscriptResponse&lt;br&gt;Out: NormalizedTranscript&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="780" width="230" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m11" value="&lt;b&gt;M11 — Linguistic Features&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: NormalizedTranscript&lt;br&gt;Out: LinguisticFeatures&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="980" width="230" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ④ ML Inference -->
+        <mxCell id="n_m09" value="&lt;b&gt;M09 — Voice Distress Model&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: VoiceFeatureVector + AudioQualityResult&lt;br&gt;Out: VoiceInferenceResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="200" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m12" value="&lt;b&gt;M12 — Text Distress Classifier&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: NormalizedTranscript + LinguisticFeatures&lt;br&gt;Out: TextInferenceResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="560" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m15" value="&lt;b&gt;M15 — Self-Report Scorer&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: SelfReportQuestionnaire&lt;br&gt;Out: SelfReportResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="700" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m16" value="&lt;b&gt;M16 — Context Parser&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: Raw intake dict/ContextData&lt;br&gt;Out: ContextData&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="840" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m17" value="&lt;b&gt;M17 — Context Risk Scorer&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: ContextData&lt;br&gt;Out: ContextRiskResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#F57C00;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="980" width="240" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ⑤ Safety & Crisis -->
+        <mxCell id="n_m13" value="&lt;b&gt;M13 — Crisis Detector&lt;/b&gt;&lt;br&gt;&lt;font color='#B71C1C' size='1'&gt;&lt;b&gt;In: NormalizedTranscript + SelfReportResult + ContextData&lt;br&gt;Out: CrisisResult&lt;/b&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#D32F2F;strokeWidth=2;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="650" width="230" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m23" value="&lt;b&gt;M23 — Safety Override&lt;/b&gt;&lt;br&gt;&lt;font color='#B71C1C' size='1'&gt;&lt;b&gt;In: RiskBand + CrisisResult&lt;br&gt;Out: (Final RiskBand, override_bool)&lt;/b&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#D32F2F;strokeWidth=2;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="850" width="230" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ⑥ Scoring & Fusion -->
+        <mxCell id="n_m19" value="&lt;b&gt;M19 — Evidence Quality&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: AudioQualityResult + VoiceInferenceResult + TextInferenceResult + SelfReportResult + ContextRiskResult&lt;br&gt;Out: QualityFactors&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="200" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m21" value="&lt;b&gt;M21 — SVI Fusion Engine&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: ModalityScores + QualityFactors&lt;br&gt;Out: SVIResult (svi, confidence, coverage, status, contributions)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="600" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m22" value="&lt;b&gt;M22 — Risk Band Classifier&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: SVIResult.svi (float)&lt;br&gt;Out: RiskBand (LOW/MOD/HIGH/CRITICAL)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=2;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="820" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ⑦ Triage & Output -->
+        <mxCell id="n_m25" value="&lt;b&gt;M25 — Explanation Generator&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: svi + RiskBand + confidence + contributors + missing_evidence + safety_override + crisis_type + AudioQualityResult&lt;br&gt;Out: AssessmentExplanation&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00796B;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1760" y="380" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n_m24" value="&lt;b&gt;M24 — Recommendation Engine&lt;/b&gt;&lt;br&gt;&lt;font color='#757575' size='1'&gt;In: RiskBand + support_needs + safety_override + AssessmentExplanation&lt;br&gt;Out: RecommendationResult&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00796B;strokeWidth=1.5;fontSize=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1760" y="700" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="n_out" value="&lt;b&gt;MasterAssessmentObject&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font color='#004D40' size='1'&gt;Final triage packet: svi, risk_band,&lt;br&gt;safety_override, recommendations,&lt;br&gt;contributors, missing_evidence&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B2DFDB;strokeColor=#004D40;strokeWidth=2.5;fontSize=12;fontColor=#004D40;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="2070" y="560" width="220" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- =============================================================
+             EDGES — all verified from source code
+             ============================================================= -->
+
+        <!-- Entry chain -->
+        <mxCell id="e_raw_m01" value="Metadata" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#546E7A;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_raw" target="n_m01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m01_m02" value="ConsentResponse" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#546E7A;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m01" target="n_m02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M02 fans out Raw WAV to M04 and M06 -->
+        <mxCell id="e_m02_m04" value="Raw WAV" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#546E7A;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.3;exitDx=0;exitDy=0;" edge="1" parent="1" source="n_m02" target="n_m04">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="240" y="437" />
+              <mxPoint x="240" y="135" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m02_m06" value="Raw WAV" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#546E7A;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m02" target="n_m06">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="260" y="453" />
+              <mxPoint x="260" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M04: AudioQualityResult →  M07 (embedded in TranscriptResponse.quality),  M09, M19, M25 -->
+        <mxCell id="e_m04_m09" value="AudioQualityResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m04" target="n_m09">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- M04 is also called internally by M07 (asr.py line 44: quality = analyze_audio_quality(...)) -->
+        <mxCell id="e_m04_m07_internal" value="internally invoked" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m04" target="n_m07">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="245" y="135" />
+              <mxPoint x="245" y="820" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m04_m19" value="AudioQualityResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m04" target="n_m19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="135" />
+              <mxPoint x="520" y="255" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m04_m25" value="AudioQualityResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m04" target="n_m25">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="530" y="135" />
+              <mxPoint x="530" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M06 → M03, M05, M07, M08 -->
+        <mxCell id="e_m06_m03" value="16kHz WAV" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m06" target="n_m03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m06_m05" value="16kHz WAV" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m06" target="n_m05">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m06_m07" value="16kHz WAV" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m06" target="n_m07">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m06_m08" value="16kHz WAV" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m06" target="n_m08">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="550" y="295" />
+              <mxPoint x="550" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M03 → M07 (language hint) -->
+        <mxCell id="e_m03_m07" value="Language Code" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0288D1;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m03" target="n_m07">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M05 → M08 -->
+        <mxCell id="e_m05_m08" value="List[SpeechSegment]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#388E3C;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m05" target="n_m08">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="545" y="635" />
+              <mxPoint x="545" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M07 → M10 -->
+        <mxCell id="e_m07_m10" value="TranscriptResponse" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#388E3C;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m07" target="n_m10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M08 → M09, M13 -->
+        <mxCell id="e_m08_m09" value="VoiceFeatureVector" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#388E3C;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m08" target="n_m09">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="540" />
+              <mxPoint x="820" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m08_m13" value="VoiceFeatureVector" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m08" target="n_m13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="830" y="540" />
+              <mxPoint x="830" y="697" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M10 → M11, M12, M13, M15, M16 -->
+        <mxCell id="e_m10_m11" value="NormalizedTranscript" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#388E3C;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m10" target="n_m11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m10_m12" value="NormalizedTranscript" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#388E3C;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m10" target="n_m12">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="820" />
+              <mxPoint x="840" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m10_m13" value="NormalizedTranscript" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m10" target="n_m13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="820" />
+              <mxPoint x="850" y="697" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <!-- M10 input NOT used directly by M15 — M15 takes SelfReportQuestionnaire from caller UI -->
+        <!-- M16 takes Raw intake dict, NOT from M10 -->
+
+        <!-- M11 → M12 -->
+        <mxCell id="e_m11_m12" value="LinguisticFeatures" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#388E3C;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m11" target="n_m12">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="860" y="1020" />
+              <mxPoint x="860" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M09 → M19, M21 -->
+        <mxCell id="e_m09_m19" value="VoiceInferenceResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m09" target="n_m19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m09_m21" value="score (voice)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m09" target="n_m21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1420" y="240" />
+              <mxPoint x="1420" y="650" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M12 → M19, M21 -->
+        <mxCell id="e_m12_m19" value="TextInferenceResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m12" target="n_m19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1430" y="600" />
+              <mxPoint x="1430" y="255" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m12_m21" value="score (text)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m12" target="n_m21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M15 → M13 (SelfReportResult triggers crisis check), M19, M21 -->
+        <mxCell id="e_m15_m13" value="SelfReportResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m15" target="n_m13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m15_m19" value="SelfReportResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m15" target="n_m19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1440" y="740" />
+              <mxPoint x="1440" y="255" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m15_m21" value="score (self-report)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m15" target="n_m21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1450" y="740" />
+              <mxPoint x="1450" y="650" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M16 → M17, M13 (ContextData feeds crisis check) -->
+        <mxCell id="e_m16_m17" value="ContextData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#F57C00;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m16" target="n_m17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_m16_m13" value="ContextData" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m16" target="n_m13">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="880" />
+              <mxPoint x="1160" y="697" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M17 → M19, M21 -->
+        <mxCell id="e_m17_m19" value="ContextRiskResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m17" target="n_m19">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1460" y="1020" />
+              <mxPoint x="1460" y="255" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_m17_m21" value="score (context)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m17" target="n_m21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1470" y="1020" />
+              <mxPoint x="1470" y="650" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M13 → M23 -->
+        <mxCell id="e_m13_m23" value="CrisisResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;strokeWidth=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m13" target="n_m23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M19 → M21 (QualityFactors) -->
+        <mxCell id="e_m19_m21" value="QualityFactors" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;strokeWidth=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m19" target="n_m21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M21 → M22 (SVI float score) -->
+        <mxCell id="e_m21_m22" value="svi (float 0-100)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;strokeWidth=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m21" target="n_m22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M22 → M23 (base RiskBand input) -->
+        <mxCell id="e_m22_m23" value="base RiskBand" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m22" target="n_m23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M23 → M24 (final RiskBand + safety_override flag) -->
+        <mxCell id="e_m23_m24" value="Final RiskBand + safety_override" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;strokeWidth=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m23" target="n_m24">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1450" y="895" />
+              <mxPoint x="1710" y="895" />
+              <mxPoint x="1710" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M21 → M25 (svi, confidence, contributors, missing_evidence) -->
+        <mxCell id="e_m21_m25" value="svi, confidence, contributors, missing_evidence" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m21" target="n_m25">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1720" y="650" />
+              <mxPoint x="1720" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M23 → M25 (safety_override + crisis_type) -->
+        <mxCell id="e_m23_m25" value="safety_override + crisis_type" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D32F2F;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m23" target="n_m25">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1450" y="895" />
+              <mxPoint x="1730" y="895" />
+              <mxPoint x="1730" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- M25 → M24 (AssessmentExplanation) -->
+        <mxCell id="e_m25_m24" value="AssessmentExplanation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#00796B;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m25" target="n_m24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- M24 → Final Output -->
+        <mxCell id="e_m24_out" value="RecommendationResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#004D40;strokeWidth=2;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m24" target="n_out">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2050" y="750" />
+              <mxPoint x="2050" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <!-- SVIResult merges into final output -->
+        <mxCell id="e_m21_out" value="SVIResult (svi, risk_band, coverage, contributions)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#7B1FA2;dashed=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="n_m21" target="n_out">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1740" y="650" />
+              <mxPoint x="1740" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

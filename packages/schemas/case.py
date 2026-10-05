@@ -33,3 +33,20 @@ class CaseResponse(BaseSchema):
     initial_notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class HumanReviewCreate(BaseSchema):
+    """Payload for human review M26."""
+    reviewer_id: str
+    final_action: str = Field(..., description="CONFIRM, ESCALATE, DOWNGRADE, CLOSE")
+    modified_priority: Optional[RiskBand] = None
+    reason: Optional[str] = None
+
+class HumanReviewResponse(BaseSchema):
+    id: UUID = Field(default_factory=uuid4)
+    case_id: UUID
+    reviewer_id: str
+    final_action: str
+    modified_priority: Optional[RiskBand] = None
+    reason: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

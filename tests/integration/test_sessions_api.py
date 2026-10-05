@@ -67,7 +67,7 @@ async def test_consent_flow(async_client: AsyncClient):
 
 
 @pytest.mark.integration
-async def test_case_triage_flow(async_client: AsyncClient):
+async def test_case_triage_flow(async_client: AsyncClient, auth_client: AsyncClient):
     # Create session
     session_res = await async_client.post("/api/v1/sessions", json={"channel": "CHAT_TEXT", "language": "hi"})
     session_id = session_res.json()["id"]
@@ -78,19 +78,19 @@ async def test_case_triage_flow(async_client: AsyncClient):
         "priority": "HIGH",
         "initial_notes": "Immediate distress signals detected",
     }
-    case_res = await async_client.post("/api/v1/cases", json=case_payload)
+    case_res = await auth_client.post("/api/v1/cases", json=case_payload)
     assert case_res.status_code == 201
     case_id = case_res.json()["id"]
     assert case_res.json()["priority"] == "HIGH"
     assert case_res.json()["status"] == "OPEN"
 
     # List cases in queue
-    list_res = await async_client.get("/api/v1/cases?priority=HIGH")
+    list_res = await auth_client.get("/api/v1/cases?priority=HIGH")
     assert list_res.status_code == 200
     assert len(list_res.json()) >= 1
 
     # Update case status
-    update_res = await async_client.patch(
+    update_res = await auth_client.patch(
         f"/api/v1/cases/{case_id}/status?new_status=IN_REVIEW&assigned_to=responder_42"
     )
     assert update_res.status_code == 200

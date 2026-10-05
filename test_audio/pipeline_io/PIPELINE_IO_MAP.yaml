@@ -109,6 +109,104 @@ modules:
     depends_on: ["m06_preprocessor"]
     language_metadata: "{stem}_meta.json"
 
+  # ----------------------------------------------------------------
+  # M08 — Voice Feature Extractor
+  # Input:  preprocessed 16kHz mono WAV (from shared_16k/) + M05 VAD output
+  # Output: VoiceFeatureVector JSON per file
+  # ----------------------------------------------------------------
+  m08_voice_features:
+    module: "services.audio_worker.features.extract_voice_features"
+    input:
+      folder: "test_audio/pipeline_io/shared_16k"
+      vad_folder: "test_audio/pipeline_io/m05_vad/output"
+      accepts: ["*.wav"]
+      description: >
+        Preprocessed 16kHz audio paired with VAD speech segments.
+    output:
+      folder: "test_audio/pipeline_io/m08_voice_features/output"
+      format: "VoiceFeatureVector (JSON)"
+      filename_pattern: "{stem}_features.json"
+      schema: "packages.schemas.audio.VoiceFeatureVector"
+    depends_on: ["m06_preprocessor", "m05_vad"]
+
+  # ----------------------------------------------------------------
+  # M09 — Voice Distress Model
+  # Input:  VoiceFeatureVector (from M08) + AudioQualityResult (from M04)
+  # Output: VoiceInferenceResult JSON per file
+  # ----------------------------------------------------------------
+  m09_voice_distress:
+    module: "services.inference.voice_model.evaluate_voice_distress"
+    input:
+      folder: "test_audio/pipeline_io/m08_voice_features/output"
+      quality_folder: "test_audio/pipeline_io/m04_quality_check/output"
+      accepts: ["*.json"]
+      description: >
+        Voice feature vectors paired with audio quality assessments.
+    output:
+      folder: "test_audio/pipeline_io/m09_voice_distress/output"
+      format: "VoiceInferenceResult (JSON)"
+      filename_pattern: "{stem}_voice_distress.json"
+      schema: "packages.schemas.audio.VoiceInferenceResult"
+  # ----------------------------------------------------------------
+  # M10 — Transcript Normalizer
+  # Input:  TranscriptResponse JSON from M07 ASR
+  # Output: NormalizedTranscript JSON per file
+  # ----------------------------------------------------------------
+  m10_transcript_normalizer:
+    module: "services.inference.transcript_normalizer.normalize_transcript"
+    input:
+      folder: "test_audio/pipeline_io/m07_asr/output"
+      accepts: ["*.json"]
+      description: >
+        Raw ASR transcripts with timestamped segments.
+    output:
+      folder: "test_audio/pipeline_io/m10_transcript_normalizer/output"
+      format: "NormalizedTranscript (JSON)"
+      filename_pattern: "{stem}_normalized.json"
+      schema: "packages.schemas.text.NormalizedTranscript"
+    depends_on: ["m07_asr"]
+
+  # ----------------------------------------------------------------
+  # M11 — Linguistic Feature Extractor
+  # Input:  NormalizedTranscript JSON from M10
+  # Output: LinguisticFeatures JSON per file
+  # ----------------------------------------------------------------
+  m11_linguistic_features:
+    module: "services.inference.linguistic_features.extract_linguistic_features"
+    input:
+      folder: "test_audio/pipeline_io/m10_transcript_normalizer/output"
+      accepts: ["*.json"]
+      description: >
+        Normalized transcripts for psychological distress lexicon analysis.
+    output:
+      folder: "test_audio/pipeline_io/m11_linguistic_features/output"
+      format: "LinguisticFeatures (JSON)"
+      filename_pattern: "{stem}_ling_features.json"
+      schema: "packages.schemas.text.LinguisticFeatures"
+    depends_on: ["m10_transcript_normalizer"]
+
+  # ----------------------------------------------------------------
+  # M12 — Text Distress Classifier
+  # Input:  NormalizedTranscript (M10) + LinguisticFeatures (M11)
+  # Output: TextInferenceResult JSON per file
+  # ----------------------------------------------------------------
+  m12_text_distress:
+    module: "services.inference.text_classifier.classify_text_distress"
+    input:
+      folder: "test_audio/pipeline_io/m10_transcript_normalizer/output"
+      features_folder: "test_audio/pipeline_io/m11_linguistic_features/output"
+      accepts: ["*.json"]
+      description: >
+        Normalized transcripts paired with linguistic features.
+    output:
+      folder: "test_audio/pipeline_io/m12_text_distress/output"
+      format: "TextInferenceResult (JSON)"
+      filename_pattern: "{stem}_text_distress.json"
+      schema: "packages.schemas.text.TextInferenceResult"
+    depends_on: ["m10_transcript_normalizer", "m11_linguistic_features"]
+
+
+
 
 # =====================================================================
 # DATA SOURCE REGISTRY

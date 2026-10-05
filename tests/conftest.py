@@ -42,3 +42,15 @@ async def async_client(db_session: AsyncSession):
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
     app.dependency_overrides.clear()
+
+@pytest_asyncio.fixture(scope="function")
+async def auth_client(async_client: AsyncClient):
+    """Test HTTP client with auth token set."""
+    res = await async_client.post(
+        "/api/v1/auth/token",
+        data={"username": "responder", "password": "saathi-resp-2026"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    token = res.json()["access_token"]
+    async_client.headers["Authorization"] = f"Bearer {token}"
+    return async_client

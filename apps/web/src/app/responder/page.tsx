@@ -1,13 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { CaseResponse, RiskBand } from "@/types/api";
-import { AlertTriangle, Clock, RefreshCw, UserCheck, ShieldAlert, Filter } from "lucide-react";
+import { AlertTriangle, Clock, RefreshCw, UserCheck, ShieldAlert, Filter, Radio } from "lucide-react";
+
+interface LiveUpdate {
+  svi: number;
+  risk_band: string;
+  confidence?: number;
+  chunk_index?: number;
+}
 
 export default function ResponderPage() {
   const [cases, setCases] = useState<CaseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
+  const [liveUpdates, setLiveUpdates] = useState<Record<string, LiveUpdate>>({});
 
   const fetchCases = async () => {
     setLoading(true);
@@ -60,7 +69,69 @@ export default function ResponderPage() {
     fetchCases();
   }, []);
 
-  const getPriorityBadge = (priority: RiskBand) => {
+  // Connect to live SVI WebSocket for open/active sessions
+  useEffect(() => {
+    if (cases.length === 0) return;
+
+    const activeSessions = cases.slice(0, 5).map((c) => c.session_id).filter(Boolean);
+    const sockets: WebSocket[] = [];
+
+    activeSessions.forEach((sessionId) => {
+      try {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
+        const ws = new WebSocket(`${protocol}//${host}/ws/svi/${sessionId}`);
+
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.svi !== undefined) {
+              setLiveUpdates((prev) => ({
+                ...prev,
+                [sessionId]: {
+                  svi: data.svi,
+                  risk_band: data.risk_band,
+                  confidence: data.confidence,
+                  chunk_index: data.chunk_index,
+                },
+              }));
+            }
+          } catch {
+            // ignore
+          }
+        };
+
+        sockets.push(ws);
+      } catch {
+        // ws not available
+      }
+    });
+
+    return () => {
+      sockets.forEach((s) => {
+        try {
+          s.close();
+        } catch {
+          // ignore
+        }
+      });
+    };
+  }, [cases]);
+
+  const getPriorityBadge = (priority: RiskBand, sessionId?: string) => {
+    const live = sessionId ? liveUpdates[sessionId] : undefined;
+
+    if (live) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
+            <Radio className="w-3 h-3 text-rose-400 animate-spin" />
+            LIVE SVI: {live.svi} ({live.risk_band})
+          </span>
+        </div>
+      );
+    }
+
     switch (priority) {
       case "CRITICAL":
         return (
@@ -196,9 +267,14 @@ export default function ResponderPage() {
               {filteredCases.map((c) => (
                 <tr key={c.id} className="hover:bg-slate-800/40 transition-colors">
                   <td className="py-4 px-4 font-mono font-medium text-slate-300">
-                    {c.id.slice(0, 13)}...
+                    <div className="flex items-center gap-2">
+                      {liveUpdates[c.session_id] && (
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
+                      )}
+                      <span>{c.id.slice(0, 13)}...</span>
+                    </div>
                   </td>
-                  <td className="py-4 px-4">{getPriorityBadge(c.priority)}</td>
+                  <td className="py-4 px-4">{getPriorityBadge(c.priority, c.session_id)}</td>
                   <td className="py-4 px-4 text-slate-300 max-w-xs truncate">
                     {c.initial_notes || "Standard triage intake"}
                   </td>
@@ -211,9 +287,12 @@ export default function ResponderPage() {
                     {c.assigned_to || <span className="text-slate-500 italic">Unassigned</span>}
                   </td>
                   <td className="py-4 px-4 text-right">
-                    <button className="px-3 py-1.5 rounded-lg bg-brand-600/80 hover:bg-brand-500 text-white font-semibold transition-colors">
-                      Review Case
-                    </button>
+                    <Link
+                      href={`/cases/${c.id}`}
+                      className="inline-block px-3 py-1.5 rounded-lg bg-brand-600/80 hover:bg-brand-500 text-white font-semibold transition-colors text-center"
+                    >
+                      Review Case →
+                    </Link>
                   </td>
                 </tr>
               ))}

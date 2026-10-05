@@ -1,4 +1,4 @@
-.PHONY: help install lint format test test-unit test-cov docker-up docker-down docker-logs generate-types clean
+.PHONY: help install lint format test test-unit test-cov docker-up docker-down docker-logs infra-up infra-down migrate migrate-new migrate-down up down logs generate-types clean
 
 help:
 	@echo "SAATHI-AI — Development Commands"
@@ -9,9 +9,14 @@ help:
 	@echo "  make test            Run all test suites"
 	@echo "  make test-unit       Run unit tests only (fast)"
 	@echo "  make test-cov        Run tests with HTML & terminal coverage"
-	@echo "  make docker-up       Start infrastructure services (Postgres, Redis, LiveKit)"
-	@echo "  make docker-down     Stop infrastructure services"
-	@echo "  make docker-logs     Tail infrastructure logs"
+	@echo "  make infra-up        Start core backing infra (Postgres, Redis, MinIO)"
+	@echo "  make infra-down      Stop core backing infra"
+	@echo "  make migrate         Run Alembic migrations to head"
+	@echo "  make migrate-new     Generate new Alembic migration (usage: make migrate-new MSG='desc')"
+	@echo "  make migrate-down    Rollback last Alembic migration"
+	@echo "  make up              Build & start full stack (infra, migrate, api, worker)"
+	@echo "  make down            Stop full stack and remove volumes"
+	@echo "  make logs            Tail API and worker container logs"
 	@echo "  make generate-types  Generate TypeScript types from FastAPI OpenAPI schemas"
 	@echo "  make clean           Clean up caches and temporary test/build artifacts"
 
@@ -36,14 +41,38 @@ test-unit:
 test-cov:
 	pytest tests/ --cov=services --cov=packages --cov-report=term-missing --cov-report=html
 
-docker-up:
-	docker compose -f infra/compose/docker-compose.yml up -d
+# --- Infrastructure ---
+infra-up:
+	docker compose -f infra/compose/docker-compose.yml up -d postgres redis minio
 
-docker-down:
+infra-down:
 	docker compose -f infra/compose/docker-compose.yml down
 
+# Backwards-compatible aliases
+docker-up: infra-up
+docker-down: infra-down
 docker-logs:
 	docker compose -f infra/compose/docker-compose.yml logs -f
+
+# --- Migrations ---
+migrate:
+	alembic -c infra/migrations/alembic.ini upgrade head
+
+migrate-new:
+	alembic -c infra/migrations/alembic.ini revision --autogenerate -m "$(MSG)"
+
+migrate-down:
+	alembic -c infra/migrations/alembic.ini downgrade -1
+
+# --- Full stack ---
+up:
+	docker compose -f infra/compose/docker-compose.yml up --build -d
+
+down:
+	docker compose -f infra/compose/docker-compose.yml down -v
+
+logs:
+	docker compose -f infra/compose/docker-compose.yml logs -f api worker
 
 generate-types:
 	datamodel-codegen --url http://localhost:8000/openapi.json --output apps/web/src/types/api.ts --target-python-version 3.12
