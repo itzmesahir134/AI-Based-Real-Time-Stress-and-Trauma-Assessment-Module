@@ -37,7 +37,7 @@ export default function RootLayout({
               </span>
             </div>
 
-            <nav className="flex items-center gap-6">
+            <nav className="flex items-center gap-5">
               <Link
                 href="/caller"
                 className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
@@ -48,12 +48,30 @@ export default function RootLayout({
                 href="/responder"
                 className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
               >
-                Responder Dashboard
+                Triage Queue
               </Link>
-              <div className="flex items-center gap-2 pl-4 border-l border-slate-700/60 text-xs text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>System Online</span>
+              <Link
+                href="/analytics"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              >
+                Analytics
+              </Link>
+              <Link
+                href="/admin/models"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              >
+                Admin
+              </Link>
+              <div className="flex items-center gap-2 pl-4 border-l border-slate-700/60">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs text-slate-400">Online</span>
               </div>
+              <Link
+                href="/login"
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand-600/80 hover:bg-brand-500/80 text-white transition-colors"
+              >
+                Sign In
+              </Link>
             </nav>
           </div>
         </header>

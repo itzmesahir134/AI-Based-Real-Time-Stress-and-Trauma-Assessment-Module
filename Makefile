@@ -17,8 +17,16 @@ help:
 	@echo "  make up              Build & start full stack (infra, migrate, api, worker)"
 	@echo "  make down            Stop full stack and remove volumes"
 	@echo "  make logs            Tail API and worker container logs"
+	@echo "  make seed            Seed demo cases into database"
+	@echo "  make demo            Train models, seed DB, and run demo stack"
 	@echo "  make generate-types  Generate TypeScript types from FastAPI OpenAPI schemas"
 	@echo "  make clean           Clean up caches and temporary test/build artifacts"
+
+seed:
+	python scripts/seed_demo_data.py
+
+demo: seed
+	python scripts/train_models.py
 
 install:
 	python -m pip install --upgrade pip

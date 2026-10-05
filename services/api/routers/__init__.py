@@ -13,9 +13,15 @@ from .review import router as review_router
 from .livekit_token import router as livekit_token_router
 from .ws_svi import router as ws_svi_router
 from .auth import router as auth_router
+from .analytics import router as analytics_router
+from .admin import router as admin_router
+from .metrics import router as metrics_router
 
 __all__ = [
     "auth_router",
+    "analytics_router",
+    "admin_router",
+    "metrics_router",
     "health_router",
     "sessions_router",
     "consent_router",

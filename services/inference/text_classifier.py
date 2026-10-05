@@ -4,10 +4,27 @@ Calculates a calibrated continuous text distress score (0-100) from
 normalized transcripts and linguistic feature vectors.
 """
 
+from functools import lru_cache
+from pathlib import Path
 from typing import Dict, List, Optional
 import numpy as np
 
 from packages.schemas.text import LinguisticFeatures, NormalizedTranscript, TextInferenceResult
+
+_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "models" / "text" / "text_distress_model.joblib"
+
+
+@lru_cache(maxsize=1)
+def _load_text_pipeline():
+    """Load the trained NLP model pipeline if available."""
+    if _MODEL_PATH.exists():
+        try:
+            import joblib
+            return joblib.load(_MODEL_PATH)
+        except Exception:
+            return None
+    return None
+
 
 # Dimensional base impact weights
 _DIM_WEIGHTS: Dict[str, float] = {
@@ -27,7 +44,7 @@ def classify_text_distress(
     features: Optional[LinguisticFeatures] = None,
     language: str = "en",
 ) -> TextInferenceResult:
-    """Spec M12: Classify text distress score from linguistic indicators.
+    """Spec M12: Classify text distress score from linguistic indicators and NLP models.
 
     Args:
         transcript: NormalizedTranscript from M10.
@@ -88,12 +105,29 @@ def classify_text_distress(
         # Density factor: high proportion of distress words in brief emergency calls raises urgency
         density = indicator_count / max(total_words, 1)
         density_multiplier = 1.0 + 0.5 * min(density, 1.0)
-        final_score = raw_sum * density_multiplier
-        final_score = float(np.clip(final_score, 15.0, 100.0))
+        rule_score = float(np.clip(raw_sum * density_multiplier, 15.0, 100.0))
     else:
         # Calm conversational baseline
-        final_score = 10.0
+        rule_score = 10.0
         active_indicators = ["neutral_conversational_language"]
+
+    # Check for trained NLP model
+    pipeline = _load_text_pipeline()
+    model_version = "v1.0.0-lexicon-heuristic"
+    if pipeline is not None:
+        try:
+            ml_pred = float(pipeline.predict([text])[0])
+            if indicator_count == 0:
+                # Neutral baseline: keep within low risk band
+                final_score = float(np.clip(0.30 * ml_pred + 0.70 * rule_score, 0.0, 18.0))
+            else:
+                # Ensemble 60% ML + 40% linguistic indicator rules
+                final_score = float(np.clip(0.60 * ml_pred + 0.40 * rule_score, 0.0, 100.0))
+            model_version = "v1.1.0-tfidf-rf"
+        except Exception:
+            final_score = rule_score
+    else:
+        final_score = rule_score
 
     # 3. Confidence calibration
     # Confidence scales with word count and segment confidence
@@ -108,7 +142,7 @@ def classify_text_distress(
         score=round(final_score, 1),
         confidence=calibrated_conf,
         indicators=active_indicators,
-        model_version="v1.0.0-lexicon-heuristic",
+        model_version=model_version,
         language=language,
         abstained=False,
     )

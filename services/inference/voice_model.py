@@ -5,10 +5,26 @@ a continuous voice distress indicator score (0-100) with calibrated confidence,
 evidence breakdown, and quality gating.
 """
 
+from functools import lru_cache
+from pathlib import Path
 from typing import List, Optional
 import numpy as np
 
 from packages.schemas.audio import AudioQualityResult, VoiceFeatureVector, VoiceInferenceResult
+
+_MODEL_PATH = Path(__file__).resolve().parent.parent.parent / "models" / "voice" / "voice_distress_model.joblib"
+
+
+@lru_cache(maxsize=1)
+def _load_voice_pipeline():
+    """Load the trained ML pipeline if available."""
+    if _MODEL_PATH.exists():
+        try:
+            import joblib
+            return joblib.load(_MODEL_PATH)
+        except Exception:
+            return None
+    return None
 
 
 def evaluate_voice_distress(
@@ -93,7 +109,38 @@ def evaluate_voice_distress(
         raw_distress = max(raw_distress, 0.40)
         indicators.append(("affective_monotone_blunting", 0.70, 0.15))
 
-    score = round(float(np.clip(raw_distress * 100.0, 0.0, 100.0)), 1)
+    heuristic_score = float(np.clip(raw_distress * 100.0, 0.0, 100.0))
+
+    # Check for trained ML model checkpoint
+    pipeline = _load_voice_pipeline()
+    model_version = "v1.0.0-heuristic"
+    if pipeline is not None:
+        try:
+            mfccs = features.mfcc_mean if features.mfcc_mean and len(features.mfcc_mean) == 13 else [0.0] * 13
+            x_vec = np.array([[
+                features.pitch_mean,
+                features.pitch_std,
+                features.pitch_range,
+                features.speech_rate_syl_per_sec,
+                features.pause_ratio,
+                features.pause_count,
+                features.energy_mean,
+                features.energy_std,
+                features.jitter,
+                features.shimmer,
+                features.spectral_centroid_mean,
+                features.zcr_mean,
+                features.voiced_fraction,
+                *mfccs
+            ]])
+            ml_pred = float(pipeline.predict(x_vec)[0])
+            # Ensemble 60% ML + 40% calibrated acoustic rules for robust interpretability
+            score = round(float(np.clip(0.60 * ml_pred + 0.40 * heuristic_score, 0.0, 100.0)), 1)
+            model_version = "v1.1.0-gb-ensemble"
+        except Exception:
+            score = round(heuristic_score, 1)
+    else:
+        score = round(heuristic_score, 1)
 
     # 3. Evidence extraction: select top contributing indicators
     active_indicators = [
@@ -114,6 +161,6 @@ def evaluate_voice_distress(
         score=score,
         confidence=confidence,
         evidence_features=evidence,
-        model_version="v1.0.0-heuristic",
+        model_version=model_version,
         abstained=False,
     )

@@ -23,6 +23,9 @@ from services.api.routers import (
     livekit_token_router,
     ws_svi_router,
     auth_router,
+    analytics_router,
+    admin_router,
+    metrics_router,
 )
 
 settings = get_settings()
@@ -89,6 +92,9 @@ def create_app() -> FastAPI:
     app.include_router(livekit_token_router)
     app.include_router(ws_svi_router)
     app.include_router(auth_router)
+    app.include_router(analytics_router)
+    app.include_router(admin_router)
+    app.include_router(metrics_router)
 
     return app
 
