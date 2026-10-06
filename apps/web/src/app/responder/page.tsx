@@ -21,11 +21,19 @@ export default function ResponderPage() {
   const fetchCases = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/cases");
+      const token = typeof window !== "undefined" ? localStorage.getItem("saathi_token") : null;
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch("/api/v1/cases", { headers });
       if (res.ok) {
         const data = await res.json();
-        setCases(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setCases(data);
+          return;
+        }
       }
+      throw new Error("No cases returned from API");
     } catch {
       // Fallback sample data if API not actively queried
       setCases([

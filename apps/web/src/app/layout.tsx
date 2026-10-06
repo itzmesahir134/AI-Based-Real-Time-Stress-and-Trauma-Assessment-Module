@@ -57,7 +57,7 @@ export default function RootLayout({
                 Analytics
               </Link>
               <Link
-                href="/admin/models"
+                href="/admin"
                 className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
               >
                 Admin

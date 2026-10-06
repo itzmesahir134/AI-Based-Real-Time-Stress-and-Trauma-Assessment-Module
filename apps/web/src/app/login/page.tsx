@@ -22,7 +22,7 @@ export default function LoginPage() {
       formData.append("username", username);
       formData.append("password", password);
 
-      const res = await fetch("http://localhost:8000/api/v1/auth/token", {
+      const res = await fetch("/api/v1/auth/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString(),
@@ -150,13 +150,13 @@ export default function LoginPage() {
                 { user: "responder", pwd: "saathi-resp-2026", label: "RESPONDER", color: "text-sky-400" },
                 { user: "supervisor", pwd: "saathi-super-2026", label: "SUPERVISOR", color: "text-amber-400" },
                 { user: "auditor", pwd: "saathi-audit-2026", label: "AUDITOR", color: "text-slate-400" },
-              ].map(({ user, label, color }) => (
+              ].map(({ user, pwd, label, color }) => (
                 <button
                   key={user}
                   type="button"
                   onClick={() => {
                     setUsername(user);
-                    setPassword(`saathi-${user.slice(0, 5)}-2026`);
+                    setPassword(pwd);
                   }}
                   className="text-left px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/40 hover:border-slate-600/60 transition-colors"
                 >

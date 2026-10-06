@@ -220,6 +220,7 @@ export default function SelfReportPage() {
 
         <div className="pt-6 border-t border-border/60">
           <button
+            id="submit-self-report-btn"
             type="submit"
             disabled={submitting}
             className="w-full py-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"

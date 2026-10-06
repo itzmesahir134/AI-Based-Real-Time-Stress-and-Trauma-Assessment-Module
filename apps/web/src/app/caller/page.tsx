@@ -274,6 +274,7 @@ export default function CallerPage() {
             <div className="space-y-3 pt-2">
               <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/60 border border-border/60 cursor-pointer hover:bg-slate-800/50 transition-colors">
                 <input
+                  id="audio-consent-check"
                   type="checkbox"
                   checked={audioConsent}
                   onChange={(e) => setAudioConsent(e.target.checked)}
@@ -289,6 +290,7 @@ export default function CallerPage() {
 
               <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/60 border border-border/60 cursor-pointer hover:bg-slate-800/50 transition-colors">
                 <input
+                  id="ai-consent-check"
                   type="checkbox"
                   checked={aiConsent}
                   onChange={(e) => setAiConsent(e.target.checked)}
@@ -313,6 +315,7 @@ export default function CallerPage() {
 
           {/* Action Button */}
           <button
+            id="start-session-btn"
             type="button"
             onClick={handleStartSession}
             disabled={loading}
@@ -467,6 +470,7 @@ export default function CallerPage() {
               </button>
 
               <Link
+                id="begin-self-assessment-link"
                 href={`/session/${sessionData.id}/self-report`}
                 className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs transition-all shadow-lg shadow-brand-500/20"
               >
